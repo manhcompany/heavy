@@ -9,7 +9,7 @@ object Scheduler {
     operators.foldLeft(stack)((s, o) => {
       val operands = (1 to o.getNumberOperator).toList.map(x => s.pop())
       o.execute(operands: _*) match {
-        case Some(r) => s.push(r)
+        case Some(r) => r.foldLeft(s)((a, e) => a.push(e))
         case None => s
       }
 //      s.push(o.execute(operands: _*) match {
