@@ -21,6 +21,9 @@ class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDeco
 }
 
 object SparkOperator {
+
+  var aliases: Map[String, DataFrame] = Map()
+
   class InputOperator(config: OperatorConfig) extends Operand[DataFrame] {
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
       val spark = SparkCommon.getSparkSession
@@ -106,17 +109,38 @@ object SparkOperator {
     }
   }
 
+  class FilterOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      Some(List(operands.head.filter(config.conditions.get)))
+    }
+  }
+
+  class AliasOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      aliases += (config.aliasName.get -> operands.head)
+      None
+    }
+  }
+
+  class LoadAliasOperator(config: OperatorConfig) extends Operand[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      Some(List(aliases(config.aliasName.get)))
+    }
+  }
+
   def apply(config: OperatorConfig): Operator[DataFrame] = {
     new ShowDataFrame(
       config.name match {
-        case "input" => new InputOperator(config = config)
-        case "output" => new OutputOperator(config=config)
-        case "select" => new SelectOperator(config=config)
-        case "join" => new JoinOperator(config=config)
-        case "union" => new UnionOperator(config=config)
-        case "dedup" => new DeduplicateOperator(config=config)
-        case "drop" => new DropOperator(config=config)
-        case "rename" => new RenameOperator(config=config)
+        case "input" => new InputOperator(config)
+        case "output" => new OutputOperator(config)
+        case "select" => new SelectOperator(config)
+        case "join" => new JoinOperator(config)
+        case "union" => new UnionOperator(config)
+        case "dedup" => new DeduplicateOperator(config)
+        case "drop" => new DropOperator(config)
+        case "rename" => new RenameOperator(config)
+        case "alias" => new AliasOperator(config)
+        case "load-alias" => new LoadAliasOperator(config)
       }
     )
   }

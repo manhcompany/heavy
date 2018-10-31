@@ -20,6 +20,7 @@ case class OperatorConfig
   joinType: Option[String],
   numberOfInput: Option[Int],
   cols: Option[List[String]],
-  renamed: Option[Map[String, String]]
+  renamed: Option[Map[String, String]],
+  aliasName: Option[String]
 )
 

@@ -48,4 +48,10 @@ class SchedulerTest extends FlatSpec {
     val operators = config.operators.map(x => SparkOperator(x))
     Scheduler.execute[DataFrame](operators)
   }
+
+  it should "alias" in {
+    val config = Config.loadConfig("test_spark_alias.conf", "etl")
+    val operators = config.operators.map(x => SparkOperator(x))
+    Scheduler.execute[DataFrame](operators)
+  }
 }
