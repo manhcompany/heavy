@@ -12,10 +12,6 @@ object Scheduler {
         case Some(r) => r.foldLeft(s)((a, e) => a.push(e))
         case None => s
       }
-//      s.push(o.execute(operands: _*) match {
-//        case Some(r) => r
-//        case None => throw new NotImplementedError("Please implement or override execute function!")
-//      })
     })
   }
 }

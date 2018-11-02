@@ -28,5 +28,8 @@ class ConfigTest extends FlatSpec {
     assertResult(2) {
       config.operators(3).renamed.get.size
     }
+    assertResult("trx_date=20181028") {
+      config.operators(4).name
+    }
   }
 }

@@ -1,6 +1,7 @@
 package com.heavy.core.utils
 
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions._
 
 abstract class OperatorDecorator(decoratedOperator: Operator[DataFrame]) extends Operator[DataFrame] {
   override def execute(operands: DataFrame*): Option[List[DataFrame]] = decoratedOperator.execute(operands: _*)
@@ -13,7 +14,7 @@ class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDeco
     val result = decoratedOperator.execute(operands: _*)
     result match {
       case Some(dfs) =>
-        dfs.foreach(df => df.show())
+        dfs.foreach(df => df.printSchema())
         result
       case None => None
     }
@@ -27,10 +28,21 @@ object SparkOperator {
   class InputOperator(config: OperatorConfig) extends Operand[DataFrame] {
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
       val spark = SparkCommon.getSparkSession
-      Some(List(config.options.get.foldLeft(config.format match {
+      val readerFormat = config.format match {
         case Some(f) => spark.read.format(f)
         case None => spark.read
-      })((x, y) => x.option(y.key, y.value)).load(config.path.get)))
+      }
+
+      val readerOpts = config.options match {
+          case Some(opt) => opt.foldLeft(readerFormat)((r, o) => r.option(o.key, o.value))
+          case None => readerFormat
+        }
+      Some(List(readerFormat.load(config.path.get)))
+
+//      Some(List(config.options.get.foldLeft(config.format match {
+//        case Some(f) => spark.read.format(f)
+//        case None => spark.read
+//      })((x, y) => x.option(y.key, y.value)).load(config.path.get)))
     }
   }
 
@@ -62,8 +74,8 @@ object SparkOperator {
 
   class JoinOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val dfR = operands(1)
-      val dfL = operands(0)
+      val dfL = operands(1)
+      val dfR = operands(0)
       dfL.createOrReplaceTempView("dfl")
       dfR.createOrReplaceTempView("dfr")
       val spark = SparkCommon.getSparkSession
@@ -128,6 +140,23 @@ object SparkOperator {
     }
   }
 
+  class IncrementalOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      val df = operands(1)
+      val maxCurrentId = operands(0).collect().filter(!_.isNullAt(0)).map(_.getLong(0)).headOption.getOrElse(0L) + 1L
+      Some(List(df.withColumn(config.cols.get.head, monotonically_increasing_id() + maxCurrentId)))
+//      Some(List(df.selectExpr(s"monotonically_increasing_id() + ${maxCurrentId} as ${config.cols.get.head}")))
+    }
+  }
+
+  class ExceptOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      val dff = operands(1)
+      val dfs = operands(0)
+      Some(List(dff.except(dfs)))
+    }
+  }
+
   def apply(config: OperatorConfig): Operator[DataFrame] = {
     new ShowDataFrame(
       config.name match {
@@ -141,6 +170,8 @@ object SparkOperator {
         case "rename" => new RenameOperator(config)
         case "alias" => new AliasOperator(config)
         case "load-alias" => new LoadAliasOperator(config)
+        case "incremental" => new IncrementalOperator(config)
+        case "except" => new ExceptOperator(config)
       }
     )
   }
