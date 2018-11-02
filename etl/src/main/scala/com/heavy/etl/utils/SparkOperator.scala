@@ -1,5 +1,6 @@
-package com.heavy.core.utils
+package com.heavy.etl.utils
 
+import com.heavy.core.utils._
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 
@@ -34,15 +35,10 @@ object SparkOperator {
       }
 
       val readerOpts = config.options match {
-          case Some(opt) => opt.foldLeft(readerFormat)((r, o) => r.option(o.key, o.value))
-          case None => readerFormat
-        }
-      Some(List(readerFormat.load(config.path.get)))
-
-//      Some(List(config.options.get.foldLeft(config.format match {
-//        case Some(f) => spark.read.format(f)
-//        case None => spark.read
-//      })((x, y) => x.option(y.key, y.value)).load(config.path.get)))
+        case Some(opt) => opt.foldLeft(readerFormat)((r, o) => r.option(o.key, o.value))
+        case None => readerFormat
+      }
+      Some(List(readerOpts.load(config.path.get)))
     }
   }
 
@@ -145,7 +141,6 @@ object SparkOperator {
       val df = operands(1)
       val maxCurrentId = operands(0).collect().filter(!_.isNullAt(0)).map(_.getLong(0)).headOption.getOrElse(0L) + 1L
       Some(List(df.withColumn(config.cols.get.head, monotonically_increasing_id() + maxCurrentId)))
-//      Some(List(df.selectExpr(s"monotonically_increasing_id() + ${maxCurrentId} as ${config.cols.get.head}")))
     }
   }
 

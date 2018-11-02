@@ -1,13 +1,16 @@
 import sbt.Keys.libraryDependencies
 
-lazy val commondDependencies = Seq(
+lazy val commonDependencies = Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.9.2",
   "com.github.pureconfig" %% "pureconfig-enumeratum" % "0.9.2",
   "org.scalatest" %% "scalatest" % "3.2.0-SNAP10" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+  "com.typesafe" % "config" % "1.3.3"
+)
+
+lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
   "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
-  "com.typesafe" % "config" % "1.3.3"
 )
 
 lazy val commonSettings = Seq(
@@ -34,12 +37,17 @@ lazy val commonSettings = Seq(
 )
 
 lazy val core = (project in file("core"))
-  .settings(
-    commonSettings,
-    name:="core",
-    libraryDependencies:=commondDependencies)
+    .settings(
+      commonSettings,
+      name:="core",
+      libraryDependencies:=commonDependencies)
+
+lazy val etl = (project in file("etl"))
+      .dependsOn(core)
+      .settings(
+        commonSettings,
+        libraryDependencies:=sparkDependencies ++ commonDependencies,
+        name:="etl")
 
 lazy val root = (project in file("."))
-    .settings(commonSettings, name:="heavy", libraryDependencies:=commondDependencies)
-    .dependsOn(core)
-  .aggregate(core)
+  .aggregate(core, etl)

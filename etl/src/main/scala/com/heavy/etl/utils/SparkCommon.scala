@@ -1,4 +1,4 @@
-package com.heavy.core.utils
+package com.heavy.etl.utils
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession

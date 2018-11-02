@@ -1,6 +1,7 @@
-package com.heavy.core.apps
+package com.heavy.etl.apps
 
-import com.heavy.core.utils.{Config, Operator, Scheduler, SparkOperator}
+import com.heavy.core.utils.{Operator, Scheduler}
+import com.heavy.etl.utils.{Config, ETLConfig, SparkOperator}
 import org.apache.spark.sql.DataFrame
 
 object ETL extends App {

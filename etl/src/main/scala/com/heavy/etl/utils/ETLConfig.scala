@@ -1,6 +1,4 @@
-package com.heavy.core.utils
-
-import com.typesafe.config.ConfigFactory
+package com.heavy.etl.utils
 
 case class ETLConfig(operators: List[OperatorConfig])
 
@@ -23,4 +21,3 @@ case class OperatorConfig
   renamed: Option[Map[String, String]],
   aliasName: Option[String]
 )
-

@@ -1,4 +1,4 @@
-package com.heavy.core.utils
+package com.heavy.etl.utils
 
 import org.scalatest.FlatSpec
 
@@ -8,16 +8,16 @@ class ConfigTest extends FlatSpec {
 
   it should "loadConfig" in {
 
-    val config = Config.loadConfig("template.conf", "etl")
+    val config = Config.loadConfig("etl/src/test/resources/template.conf", "etl")
     println(config)
     assertResult("input") {
-      config.operators(0).name
+      config.operators.head.name
     }
     assertResult(1) {
-      config.operators(0).options.get.size
+      config.operators.head.options.get.size
     }
     assertResult(",") {
-      config.operators(0).options.get(0).value
+      config.operators.head.options.get.head.value
     }
     assertResult(1) {
       config.operators(1).select.get.size
@@ -27,9 +27,6 @@ class ConfigTest extends FlatSpec {
     }
     assertResult(2) {
       config.operators(3).renamed.get.size
-    }
-    assertResult("trx_date=20181028") {
-      config.operators(4).name
     }
   }
 }

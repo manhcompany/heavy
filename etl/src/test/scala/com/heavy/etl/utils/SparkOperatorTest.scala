@@ -1,6 +1,6 @@
-package com.heavy.core.utils
+package com.heavy.etl.utils
 
-import com.heavy.core.utils.SparkOperator.InputOperator
+import com.heavy.etl.utils.SparkOperator.InputOperator
 import org.scalatest.FlatSpec
 
 class SparkOperatorTest extends FlatSpec {
@@ -11,7 +11,7 @@ class SparkOperatorTest extends FlatSpec {
     val config = Config.loadConfig("test_spark_operator_factory_input.conf", "etl")
 
     assertResult(true) {
-      SparkOperator(config.operators(0)).isInstanceOf[InputOperator]
+      SparkOperator(config.operators.head).isInstanceOf[InputOperator]
     }
   }
 }
