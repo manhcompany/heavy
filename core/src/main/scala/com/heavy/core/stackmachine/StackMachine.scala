@@ -1,13 +1,13 @@
-package com.heavy.core.utils
+package com.heavy.core.stackmachine
 
 import scala.collection.mutable
 
-object Scheduler {
+object StackMachine {
 
   def execute[A](operators: Seq[Operator[A]]): Unit = {
-    var stack = mutable.Stack[A]()
+    val stack = mutable.Stack[A]()
     operators.foldLeft(stack)((s, o) => {
-      val operands = (1 to o.getNumberOperator).toList.map(x => s.pop())
+      val operands = (1 to o.getNumberOperator).toList.map(_ => s.pop())
       o.execute(operands: _*) match {
         case Some(r) => r.foldLeft(s)((a, e) => a.push(e))
         case None => s

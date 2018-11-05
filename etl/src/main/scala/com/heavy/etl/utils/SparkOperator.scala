@@ -1,6 +1,6 @@
 package com.heavy.etl.utils
 
-import com.heavy.core.utils._
+import com.heavy.core.stackmachine._
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 

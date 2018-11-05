@@ -1,4 +1,4 @@
-package com.heavy.core.utils
+package com.heavy.core.stackmachine
 
 trait Operator[A] {
   def getNumberOperator: Int
