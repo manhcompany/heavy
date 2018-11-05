@@ -1,6 +1,7 @@
 package com.heavy.etl.utils
 
 import com.heavy.core.stackmachine._
+import com.heavy.core.utils.Logging
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 
@@ -8,14 +9,15 @@ abstract class OperatorDecorator(decoratedOperator: Operator[DataFrame]) extends
   override def execute(operands: DataFrame*): Option[List[DataFrame]] = decoratedOperator.execute(operands: _*)
 }
 
-class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDecorator(decoratedOperator) {
+class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDecorator(decoratedOperator) with Logging {
   override def getNumberOperator: Int = decoratedOperator.getNumberOperator
 
   override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
     val result = decoratedOperator.execute(operands: _*)
     result match {
       case Some(dfs) =>
-        dfs.foreach(df => df.printSchema())
+        log.info("Schema")
+        dfs.foreach(df => log.info(df.printSchema.toString))
         result
       case None => None
     }
