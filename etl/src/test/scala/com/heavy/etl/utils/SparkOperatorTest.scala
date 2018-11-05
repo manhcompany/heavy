@@ -8,7 +8,7 @@ class SparkOperatorTest extends FlatSpec {
   behavior of "SparkOperatorTest"
 
   it should "apply" in {
-    val config = Config.loadConfig("test_spark_operator_factory_input.conf", "etl")
+    val config = Config.loadConfig("etl")
 
     assertResult(true) {
       SparkOperator(config.operators.head).isInstanceOf[InputOperator]

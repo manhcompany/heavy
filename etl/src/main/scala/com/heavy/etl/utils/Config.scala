@@ -4,9 +4,11 @@ import java.io.File
 
 import com.typesafe.config.ConfigFactory
 
+import scala.io.Source
+
 object Config {
-  def loadConfig(path: String, namespace: String): ETLConfig = {
-    val config = ConfigFactory.parseFile(new File(path)).getConfig(namespace)
-    pureconfig.loadConfigOrThrow[ETLConfig](config)
+  def loadConfig(namespace: String): ETLConfig = {
+    val config = ConfigFactory.load()
+    pureconfig.loadConfigOrThrow[ETLConfig](config, namespace)
   }
 }

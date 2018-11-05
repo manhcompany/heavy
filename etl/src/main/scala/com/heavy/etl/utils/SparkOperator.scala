@@ -64,7 +64,7 @@ object SparkOperator {
         case None => writerMode
       }
       writerFinal.save(config.path.get)
-      Some(List(operands.head))
+      None
     }
   }
 

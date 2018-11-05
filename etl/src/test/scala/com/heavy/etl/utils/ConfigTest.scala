@@ -1,5 +1,6 @@
 package com.heavy.etl.utils
 
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.FlatSpec
 
 class ConfigTest extends FlatSpec {
@@ -8,7 +9,7 @@ class ConfigTest extends FlatSpec {
 
   it should "loadConfig" in {
 
-    val config = Config.loadConfig("etl/src/test/resources/template.conf", "etl")
+    val config = Config.loadConfig("etl")
     println(config)
     assertResult("input") {
       config.operators.head.name
@@ -27,6 +28,13 @@ class ConfigTest extends FlatSpec {
     }
     assertResult(2) {
       config.operators(3).renamed.get.size
+    }
+  }
+
+  it should "pass parameter" in {
+    val config = Config.loadConfig("etl")
+    assertResult("20181028") {
+      config.operators.head.name
     }
   }
 }

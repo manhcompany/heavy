@@ -50,4 +50,5 @@ lazy val etl = (project in file("etl"))
         name:="etl")
 
 lazy val root = (project in file("."))
-  .aggregate(core, etl)
+    .settings(commonSettings, name:="heavy")
+    .aggregate(core, etl)
