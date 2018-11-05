@@ -5,12 +5,13 @@ lazy val commonDependencies = Seq(
   "com.github.pureconfig" %% "pureconfig-enumeratum" % "0.9.2",
   "org.scalatest" %% "scalatest" % "3.2.0-SNAP10" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+  "org.slf4j" % "slf4j-api" % "1.7.25",
   "com.typesafe" % "config" % "1.3.3"
 )
 
 lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
-  "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
+  "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided"
 )
 
 lazy val commonSettings = Seq(
