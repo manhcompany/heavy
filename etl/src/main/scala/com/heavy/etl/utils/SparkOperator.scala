@@ -61,9 +61,14 @@ object SparkOperator {
         case None => writerPartitionBy
       }
 
-      val writerFinal = config.options match {
-        case Some(opts) => opts.foldLeft(writerMode)((writer, opt) => writer.option(opt.key, opt.value))
+      val writeFormat = config.format match {
+        case Some(f) => writerMode.format(f)
         case None => writerMode
+      }
+
+      val writerFinal = config.options match {
+        case Some(opts) => opts.foldLeft(writeFormat)((writer, opt) => writer.option(opt.key, opt.value))
+        case None => writeFormat
       }
       writerFinal.save(config.path.get)
       None
