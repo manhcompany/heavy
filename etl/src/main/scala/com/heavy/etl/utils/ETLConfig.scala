@@ -19,5 +19,7 @@ case class OperatorConfig
   numberOfInput: Option[Int],
   cols: Option[List[String]],
   renamed: Option[Map[String, String]],
-  aliasName: Option[String]
+  aliasName: Option[String],
+  query: Option[String],
+  viewName: Option[String]
 )
