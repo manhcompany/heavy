@@ -49,7 +49,7 @@ etl = {
 ```
 
 ### Submit
-```bash
+```
 sudo -u hdfs spark-submit --master local[4] --conf spark.driver.extraJavaOptions="-Dconfig.file=test_spark_mapping.conf -Dpartition=1" --class com.heavy.etl.apps.ETL etl-assembly-0.1.0-SNAPSHOT.jar
 ```
 
@@ -87,7 +87,7 @@ Operator has a *name* to determine kind of operator.
 
 #### input
 *input* operator is operand. So *input* operator doesn't pop anything from stack.
-```hocon
+```
 {
   name = "input"
   path = "etl/src/test/resources/data/input.csv"
@@ -99,7 +99,7 @@ Operator has a *name* to determine kind of operator.
 }
 ```
 Equivalent:
-```scala
+```
 spark.read
     .format("csv")
     .option("delimiter", ",")
@@ -109,7 +109,7 @@ spark.read
 
 #### output
 *output* is unary operator. So *output* operator pop one dataframe from stack that denote by *df*
-```hocon
+```
 {
   name = "output",
   path = "etl/src/test/resources/output_data/output.csv",
@@ -123,7 +123,7 @@ spark.read
 }
 ```
 Equivalent:
-```scala
+```
 df.write
     .mode("overwrite")
     .format("csv")
@@ -133,13 +133,151 @@ df.write
     .save("etl/src/test/resources/output_data/output.csv")
 ```
 #### join
+*join* is binary operator. So it pop two dataframe from stack.
+```
+# dfl
+{
+  name = "input"
+  path = "etl/src/test/resources/data/films.csv"
+  format = "csv"
+  options = [
+    { key = "delimiter" , value = "," }
+    { key = "header", value = "true" }
+  ]
+}
+# dfr
+{
+  name = "input"
+  path = "etl/src/test/resources/data/input.csv"
+  format = "csv"
+  options = [
+    { key = "delimiter" , value = "," }
+    { key = "header", value = "true" }
+  ]
+}
+{
+  name = "join"
+  join-type = "inner"
+  conditions = "dfl.act_id = dfr.id"
+  select = ["dfr.id as act_id, dfr.name as act_name, dfr.age as age, dfl.name as film"]
+}
+```
 #### union
+*union* is nary operator. So you have to define number of operands that pop from stack.
+```hocon
+{
+  name = "union"
+  number-of-input = 3
+}
+```
 #### dedup
+*dedup* is unary operator.
+```hocon
+{ 
+  name = "dedup" 
+  cols = ["id", "age"] 
+}
+```
+Equivalent:
+```
+df.dropDuplicates(["id", "age"])
+```
 #### drop
+*drop* is unary operator.
+```hocon
+{ 
+  name = "drop" 
+  cols = ["id"] 
+}
+```
+Equivalent:
+```
+df.drop("id")
+```
 #### rename
+*rename* is unary operator
+```hocon
+{ 
+  name = "rename"
+  renamed { id = "I_D", name = "N_AME" } 
+}
+```
+Equivalent:
+```
+df.withColumnRenamed("id", "I_D")
+  .withColumnRenamed("name", "N_AME") 
+```
 #### alias
+*alias* is unary operator and it returns without dataframe. In other words, it returns ***None***
+```hocon
+{ 
+  name = "alias"
+  alias-name = "input" 
+}
+```
 #### load-alias
+*load-alias* is unary operator
+```hocon
+{ 
+  name = "load-alias"
+  alias-name = "input" 
+}
+```
 #### incremental
+*incremental* is binary operator
+```
+{ 
+  name = "load-alias"
+  alias-name = "new-mapping" 
+}
+{ 
+  name = "load-alias"
+  alias-name = "all-mapping" 
+}
+{ 
+  name = "select"
+  select = ["max(CID) as max"] 
+}
+{ 
+  name = "incremental"
+  cols = ["CID"] 
+}
+```
+With above config, application loads *all-mapping*, *new-mapping* dataframes and create *CID* column in *new-mapping* dataframe. *CID* value is incremented start *max(CID)* of *all-mapping* dataframe.
 #### except
-#### sql
+*except* is binary operator
+```hocon
+{ 
+  name = "load-alias"
+  alias-name = "new-mapping" 
+}
+{ 
+  name = "load-alias"
+  alias-name = "all-mapping"
+}
+{ 
+  name =  "except" 
+}
+```
+With above config, application loads *new-mapping*, *all-mapping* and except all records that included in *all-mapping* from *new-mapping*
 #### view
+*view* is unary operator and it returns without a dataframe.
+```hocon
+{ 
+  name = "view"
+  view-name = "df" 
+}
+```
+Equivalent:
+```
+df.createOrReplaceTempView("df") 
+```
+#### sql
+*sql* is operand.
+```hocon
+{ 
+  name = "sql"
+  query = "select * from df" 
+}
+```
+
