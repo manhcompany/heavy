@@ -80,6 +80,7 @@ We support operators as bellow:
 * except
 * sql
 * view
+* repartition
 
 ### Operators
 
@@ -279,5 +280,17 @@ df.createOrReplaceTempView("df")
   name = "sql"
   query = "select * from df" 
 }
+```
+### repartition
+*repartition* is unary operator
+```hocon
+{
+  name = "repartition"
+  partitions = 1
+}
+```
+Equivalent:
+```
+df.repartition(1) 
 ```
 

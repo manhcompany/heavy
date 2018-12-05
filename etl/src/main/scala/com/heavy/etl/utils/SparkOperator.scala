@@ -173,6 +173,12 @@ object SparkOperator {
     }
   }
 
+  class Repartition(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      Option(List(operands.head.repartition(config.partitions.get)))
+    }
+  }
+
   def apply(config: OperatorConfig): Operator[DataFrame] = {
     new ShowDataFrame(
       config.name match {
@@ -190,6 +196,7 @@ object SparkOperator {
         case "except" => new ExceptOperator(config)
         case "sql" => new SqlOperator(config)
         case "view" => new RegisterTempView(config)
+        case "repartition" => new Repartition(config)
       }
     )
   }
