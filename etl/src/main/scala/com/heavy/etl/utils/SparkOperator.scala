@@ -24,7 +24,7 @@ class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDeco
   }
 }
 
-object SparkOperator {
+class SparkOperator extends SparkOperatorFactory {
 
   var aliases: Map[String, DataFrame] = Map()
 
@@ -179,8 +179,8 @@ object SparkOperator {
     }
   }
 
-  def apply(config: OperatorConfig): Operator[DataFrame] = {
-    new ShowDataFrame(
+  override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
+    Option(new ShowDataFrame(
       config.name match {
         case "input" => new InputOperator(config)
         case "output" => new OutputOperator(config)
@@ -198,6 +198,6 @@ object SparkOperator {
         case "view" => new RegisterTempView(config)
         case "repartition" => new Repartition(config)
       }
-    )
+    ))
   }
 }

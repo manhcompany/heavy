@@ -10,7 +10,7 @@ class StackMachineTest extends FlatSpec {
 
   it should "test config" in {
     val config = Config.loadConfig("etl")
-    val operators = config.operators.map(x => SparkOperator(x))
+    val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
     StackMachine.execute[DataFrame](operators)
   }
 }
