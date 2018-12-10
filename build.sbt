@@ -14,6 +14,10 @@ lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided"
 )
 
+lazy val elasticsearchDependencies = Seq(
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "5.5.3"
+)
+
 lazy val commonSettings = Seq(
   organization := "com.heavy",
   version := "0.1.0-SNAPSHOT",
@@ -47,7 +51,7 @@ lazy val etl = (project in file("etl"))
       .dependsOn(core)
       .settings(
         commonSettings,
-        libraryDependencies:=sparkDependencies ++ commonDependencies,
+        libraryDependencies:=sparkDependencies ++ commonDependencies ++ elasticsearchDependencies,
         name:="etl")
 
 lazy val root = (project in file("."))

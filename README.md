@@ -11,6 +11,7 @@ The config file is a [hocon](https://en.wikipedia.org/wiki/HOCON) file.
 ## Build
 ```bash
 sbt clean compile assembly
+sbt 'set test in assembly := {}' clean assembly
 ```
 
 
