@@ -11,7 +11,12 @@ trait SparkOperatorFactory {
 }
 
 object SparkOperatorFactory {
-  private val factories = ServiceLoader.load(classOf[SparkOperatorFactory]).asScala.toList.map(_.getClass).map(x => x.newInstance())
+  private val factories = ServiceLoader.load(classOf[SparkOperatorFactory])
+    .asScala
+    .toList
+    .map(_.getClass)
+    .map(x => x.newInstance())
+
   def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
     val operators = factories
       .foldLeft(List[Operator[DataFrame]]())((result, operatorFactory) => operatorFactory.factory(config) match {

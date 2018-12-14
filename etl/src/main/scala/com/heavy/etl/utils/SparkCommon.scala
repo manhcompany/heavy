@@ -1,5 +1,6 @@
 package com.heavy.etl.utils
 
+import com.heavy.etl.udfs.SparkUdfInterceptor
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
@@ -10,6 +11,8 @@ object SparkCommon {
   }
 
   def getSparkSession: SparkSession = {
-    SparkSession.builder().getOrCreate()
+    val spark = SparkSession.builder().getOrCreate()
+    SparkUdfInterceptor.intercept(spark)
+    spark
   }
 }
