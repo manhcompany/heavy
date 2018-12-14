@@ -295,3 +295,23 @@ Equivalent:
 df.repartition(1) 
 ```
 
+## Intercept udf functions
+You need create a class that extended from **SparkUdfInterceptor** trait and implement **intercept(spark: SparkSession)** function. 
+
+Example:  
+```scala
+class StringUdf extends SparkUdfInterceptor with Logging{
+
+  override def intercept(spark: SparkSession): Unit = {
+    println("StringUdf intercept")
+    lazy val stringUdfFuncs = Map(
+      "uppercase" -> udf((x: String) => x.toUpperCase)
+    )
+
+    stringUdfFuncs.foreach {
+      case (name, func) => spark.udf.register(name, func)
+    }
+  }
+}
+
+```
