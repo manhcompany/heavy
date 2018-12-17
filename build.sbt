@@ -9,9 +9,11 @@ lazy val commonDependencies = Seq(
   "com.typesafe" % "config" % "1.3.3"
 )
 
+
 lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
-  "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided"
+  "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
+  "org.apache.spark" %% "spark-hive" % "2.3.2"
 )
 
 lazy val elasticsearchDependencies = Seq(

@@ -11,7 +11,10 @@ object SparkCommon {
   }
 
   def getSparkSession: SparkSession = {
-    val spark = SparkSession.builder().getOrCreate()
+    val spark = SparkSession
+      .builder()
+      .enableHiveSupport()
+      .getOrCreate()
     SparkUdfInterceptor.intercept(spark)
     spark
   }

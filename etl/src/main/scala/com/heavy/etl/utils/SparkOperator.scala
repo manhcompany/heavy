@@ -5,6 +5,8 @@ import com.heavy.core.utils.Logging
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 
+import scala.util.Try
+
 abstract class OperatorDecorator(decoratedOperator: Operator[DataFrame]) extends Operator[DataFrame] {
   override def execute(operands: DataFrame*): Option[List[DataFrame]] = decoratedOperator.execute(operands: _*)
 }
@@ -180,24 +182,24 @@ class SparkOperator extends SparkOperatorFactory {
   }
 
   override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
-    Option(new ShowDataFrame(
-      config.name match {
-        case "input" => new InputOperator(config)
-        case "output" => new OutputOperator(config)
-        case "select" => new SelectOperator(config)
-        case "join" => new JoinOperator(config)
-        case "union" => new UnionOperator(config)
-        case "dedup" => new DeduplicateOperator(config)
-        case "drop" => new DropOperator(config)
-        case "rename" => new RenameOperator(config)
-        case "alias" => new AliasOperator(config)
-        case "load-alias" => new LoadAliasOperator(config)
-        case "incremental" => new IncrementalOperator(config)
-        case "except" => new ExceptOperator(config)
-        case "sql" => new SqlOperator(config)
-        case "view" => new RegisterTempView(config)
-        case "repartition" => new Repartition(config)
-      }
-    ))
+    Try(Option(new ShowDataFrame(
+          config.name match {
+            case "input" => new InputOperator(config)
+            case "output" => new OutputOperator(config)
+            case "select" => new SelectOperator(config)
+            case "join" => new JoinOperator(config)
+            case "union" => new UnionOperator(config)
+            case "dedup" => new DeduplicateOperator(config)
+            case "drop" => new DropOperator(config)
+            case "rename" => new RenameOperator(config)
+            case "alias" => new AliasOperator(config)
+            case "load-alias" => new LoadAliasOperator(config)
+            case "incremental" => new IncrementalOperator(config)
+            case "except" => new ExceptOperator(config)
+            case "sql" => new SqlOperator(config)
+            case "view" => new RegisterTempView(config)
+            case "repartition" => new Repartition(config)
+          }))
+    ).map(d => d).recover { case exp: Throwable => None }.get
   }
 }
