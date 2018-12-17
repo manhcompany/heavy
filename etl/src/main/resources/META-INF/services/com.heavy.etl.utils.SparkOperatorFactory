@@ -1,1 +1,2 @@
 com.heavy.etl.utils.SparkOperator
+com.heavy.etl.utils.HiveOperator
