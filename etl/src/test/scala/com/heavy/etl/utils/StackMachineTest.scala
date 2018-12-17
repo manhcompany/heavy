@@ -13,4 +13,10 @@ class StackMachineTest extends FlatSpec {
     val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
     StackMachine.execute[DataFrame](operators)
   }
+
+  it should "test join config" in {
+    val config = Config.loadConfig("etl")
+    val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
+    StackMachine.execute[DataFrame](operators)
+  }
 }

@@ -17,7 +17,7 @@ class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDeco
     result match {
       case Some(dfs) =>
         log.info("Schema")
-        dfs.foreach(df => log.info(df.printSchema.toString))
+        dfs.foreach(df => log.info(df.show.toString))
         result
       case None => None
     }

@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions.udf
 class StringUdf extends SparkUdfInterceptor with Logging{
 
   override def intercept(spark: SparkSession): Unit = {
-    println("StringUdf intercept")
+    log.info("StringUdf intercept")
     lazy val stringUdfFuncs = Map(
       "uppercase" -> udf((x: String) => x.toUpperCase)
     )
