@@ -83,7 +83,7 @@ We support operators as bellow:
 * view
 * repartition
 
-### Operators
+### Spark Operators
 
 Operator has a *name* to determine kind of operator.
 
@@ -293,6 +293,24 @@ df.createOrReplaceTempView("df")
 Equivalent:
 ```
 df.repartition(1) 
+```
+
+### save-as-table 
+*save-as-table* is unary operator
+```hocon
+{ 
+  name = "save-as-table"
+  path = "output_hive"
+  mode = "append"
+  partitions = 1 
+}
+```
+Equivalent:
+```
+df.write
+    .mode("append")
+    .repartition(1)
+    .saveAsTable("output_hive")
 ```
 
 ## Intercept udf functions
