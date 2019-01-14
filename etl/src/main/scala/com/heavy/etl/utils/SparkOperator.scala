@@ -20,6 +20,8 @@ class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDeco
       case Some(dfs) =>
         log.info("Schema")
         dfs.foreach(df => log.info(df.show.toString))
+        log.info("Planning")
+        dfs.foreach(df => df.explain(true))
         result
       case None => None
     }
