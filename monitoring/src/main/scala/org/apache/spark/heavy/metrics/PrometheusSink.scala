@@ -10,11 +10,14 @@ class PrometheusSink(val property: Properties, val registry: MetricRegistry, val
   extends Sink {
 
   val ADDRESS = "pushgateway-address"
+  val PERIOD = "period"
+  val PERIOD_UNIT = "unit"
   val pushGateway = new PushGateway(property.getProperty(ADDRESS))
   val reporter: PrometheusReporter = new PrometheusReporter(registry, pushGateway)
 
   override def start(): Unit = {
-    reporter.start(10, TimeUnit.SECONDS)
+    reporter.start(property.getProperty(PERIOD).toInt, Option(property.getProperty(PERIOD_UNIT))
+      .map(s => TimeUnit.valueOf(s.toUpperCase)).getOrElse(TimeUnit.SECONDS))
   }
 
   override def stop(): Unit = {

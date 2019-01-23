@@ -12,7 +12,7 @@ class StackMachineTest extends FlatSpec {
   behavior of "SchedulerTest"
 
   it should "test config" in {
-    PrometheusConfig.init(List("date", "ds"), List("20190110", "voice"))
+    PrometheusConfig.init(List("date", "ds"), List("20190111", "voice"))
     val config = Config.loadConfig("etl")
     val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
     SparkCommon.getSparkSession("SparkIntercept")
