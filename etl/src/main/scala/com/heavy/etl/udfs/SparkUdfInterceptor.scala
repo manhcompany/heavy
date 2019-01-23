@@ -20,4 +20,3 @@ object SparkUdfInterceptor extends SparkUdfInterceptor {
       .map(x => x.newInstance()).foreach(x => x.intercept(spark))
   }
 }
-

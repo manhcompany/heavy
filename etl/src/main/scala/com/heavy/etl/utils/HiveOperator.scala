@@ -43,6 +43,6 @@ class HiveOperator extends SparkOperatorFactory {
           config.name match {
             case "save-as-table" => new SaveAsTableOperator(config)
           }))
-    ).map(d => d).recover{ case exp: Throwable => None }.get
+    ).map(d => d).recover{ case _: Throwable => None }.get
   }
 }

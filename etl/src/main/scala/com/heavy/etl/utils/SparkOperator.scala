@@ -34,7 +34,7 @@ class SparkOperator extends SparkOperatorFactory {
 
   class InputOperator(config: OperatorConfig) extends Operand[DataFrame] {
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val spark = SparkCommon.getSparkSession
+      val spark = SparkCommon.getSparkSession()
       val readerFormat = config.format match {
         case Some(f) => spark.read.format(f)
         case None => spark.read
@@ -85,7 +85,7 @@ class SparkOperator extends SparkOperatorFactory {
       val dfR = operands(0)
       dfL.createOrReplaceTempView("dfl")
       dfR.createOrReplaceTempView("dfr")
-      val spark = SparkCommon.getSparkSession
+      val spark = SparkCommon.getSparkSession()
       Some(List(spark.sql(s"select ${config.select.get.head} from dfl ${config.joinType.getOrElse("inner")} join dfr on ${config.conditions.get}")))
     }
   }
@@ -165,7 +165,7 @@ class SparkOperator extends SparkOperatorFactory {
 
   class SqlOperator(config: OperatorConfig) extends Operand[DataFrame] {
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val spark = SparkCommon.getSparkSession
+      val spark = SparkCommon.getSparkSession()
       Some(List(spark.sql(config.query.get)))
     }
   }
@@ -202,6 +202,6 @@ class SparkOperator extends SparkOperatorFactory {
             case "view" => new RegisterTempView(config)
             case "repartition" => new Repartition(config)
           }))
-    ).map(d => d).recover { case exp: Throwable => None }.get
+    ).map(d => d).recover { case _: Throwable => None }.get
   }
 }

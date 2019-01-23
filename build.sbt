@@ -6,18 +6,27 @@ lazy val commonDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.0-SNAP10" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
   "org.slf4j" % "slf4j-api" % "1.7.25",
-  "com.typesafe" % "config" % "1.3.3"
+  "com.typesafe" % "config" % "1.3.3",
+  "org.rogach" %% "scallop" % "3.1.5"
 )
 
 
 lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
   "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
-  "org.apache.spark" %% "spark-hive" % "2.3.2"
+  "org.apache.spark" %% "spark-hive" % "2.3.2",
+  "org.eclipse.jetty" % "jetty-servlet" % "9.4.14.v20181114"
 )
 
 lazy val elasticsearchDependencies = Seq(
   "org.elasticsearch" %% "elasticsearch-spark-20" % "5.5.3"
+)
+
+lazy val prometheusDependencies = Seq(
+  "io.prometheus" % "simpleclient" % "0.6.0",
+  "io.prometheus" % "simpleclient_hotspot" % "0.6.0",
+  "io.prometheus" % "simpleclient_httpserver" % "0.6.0",
+  "io.prometheus" % "simpleclient_pushgateway" % "0.6.0"
 )
 
 lazy val commonSettings = Seq(
@@ -50,12 +59,20 @@ lazy val core = (project in file("core"))
       libraryDependencies:=commonDependencies)
 
 lazy val etl = (project in file("etl"))
-      .dependsOn(core)
+      .dependsOn(core, monitoring)
       .settings(
         commonSettings,
         libraryDependencies:=sparkDependencies ++ commonDependencies ++ elasticsearchDependencies,
         name:="etl")
 
+lazy val monitoring = (project in file("monitoring"))
+  .dependsOn(core)
+  .settings(
+    commonSettings,
+    name:="monitoring",
+    libraryDependencies:=sparkDependencies ++ commonDependencies ++ prometheusDependencies
+  )
+
 lazy val root = (project in file("."))
     .settings(commonSettings, name:="heavy")
-    .aggregate(core, etl)
+    .aggregate(core, etl, monitoring)
