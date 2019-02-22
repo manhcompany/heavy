@@ -10,4 +10,8 @@ We have a class that implement **org.apache.spark.sql.util.QueryExecutionListene
 
 ### QueryExecutionSource
 
-**QueryExecutionSource** extends **Source** trait of Spark. Metrics are pushed from **QueryExecutionListener** when **onSuccess** event of **QueryExecutionListener** is triggered.  
+**QueryExecutionSource** extends **Source** trait of Spark. Metrics are pushed from **QueryExecutionListener** when **onSuccess** event of **QueryExecutionListener** is triggered.
+
+### PrometheusSink
+
+**PrometheusSink** extends **Sink** trait of Spark. It pushes metrics to **PushGateway** that is a component of Prometheus.

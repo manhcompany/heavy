@@ -1,5 +1,7 @@
 import sbt.Keys.libraryDependencies
 
+val sparkV = "2.2.0"
+
 lazy val commonDependencies = Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.9.2",
   "com.github.pureconfig" %% "pureconfig-enumeratum" % "0.9.2",
@@ -12,9 +14,9 @@ lazy val commonDependencies = Seq(
 
 
 lazy val sparkDependencies = Seq(
-  "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
-  "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
-  "org.apache.spark" %% "spark-hive" % "2.3.2",
+  "org.apache.spark" %% "spark-core" % sparkV % "provided",
+  "org.apache.spark" %% "spark-sql" % sparkV % "provided",
+  "org.apache.spark" %% "spark-hive" % sparkV,
   "org.eclipse.jetty" % "jetty-servlet" % "9.4.14.v20181114"
 )
 
