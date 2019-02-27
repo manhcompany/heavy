@@ -1,11 +1,12 @@
 package org.apache.spark.heavy.metrics
 
 import java.util
+import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics._
 import com.heavy.core.utils.Logging
-import com.heavy.monitoring.{PrometheusConfig, SparkApplicationMetricFilter}
+import com.heavy.monitoring.{PrometheusLabelConfig, SparkApplicationMetricFilter}
 import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
 import org.apache.spark.SparkContext
@@ -13,8 +14,8 @@ import org.apache.spark.SparkContext
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-protected class PrometheusReporter(registry: MetricRegistry, pushGateway: PushGateway) extends
-  ScheduledReporter(registry, "prometheus-reporter", new SparkApplicationMetricFilter(), TimeUnit.SECONDS, TimeUnit.MILLISECONDS) with Logging {
+protected class PushGatewayReporter(registry: MetricRegistry, pushGateway: PushGateway) extends
+  ScheduledReporter(registry, "pushgateway-reporter", new SparkApplicationMetricFilter(), TimeUnit.SECONDS, TimeUnit.MILLISECONDS) with Logging {
 
 
   override def report(gauges: util.SortedMap[String, Gauge[_]],
@@ -24,15 +25,16 @@ protected class PrometheusReporter(registry: MetricRegistry, pushGateway: PushGa
                       timers: util.SortedMap[String, Timer]): Unit = {
 
     val reg = new CollectorRegistry
+
     if (!gauges.isEmpty) {
       for (entry <- gauges.entrySet) {
         Try {
           io.prometheus.client.Gauge.build()
             .name(entry.getKey.split("\\.").tail.tail.mkString("_"))
-            .labelNames(PrometheusConfig.getLabelNames:_*)
+            .labelNames(PrometheusLabelConfig.getLabelNames:_*)
             .help("Metrics of QueryExecution")
             .register(reg)
-            .labels(PrometheusConfig.getLabels:_*)
+            .labels(PrometheusLabelConfig.getLabels:_*)
             .set(entry.getValue.getValue.toString.toDouble)
         }.recover{ case exp: Throwable => log.info(exp.getMessage) }
       }

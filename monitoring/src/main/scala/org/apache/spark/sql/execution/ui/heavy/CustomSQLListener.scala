@@ -6,13 +6,15 @@ import org.apache.spark.sql.execution.ui.{SQLExecutionUIData, SQLListener, Spark
 import org.apache.spark.{SparkContext, SparkEnv}
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 
 class CustomSQLListener extends SQLListener(SparkContext.getOrCreate().getConf) {
   val sources = List(new CustomSQLListenerSource(SparkContext.getOrCreate()))
+  val processedExecutions: ListBuffer[Long] = mutable.ListBuffer[Long]()
 
   def process(): Unit = {
-    val qe = super.getCompletedExecutions.filter(e => e.description.contains("save"))
+    val qe = super.getCompletedExecutions.filter(e => !processedExecutions.contains(e.executionId) && e.description.contains("save"))
     qe.foreach(q => {
       val nodesMap = scala.collection.mutable.Map[Long, TreeNode]()
       var treeNodes = scala.collection.mutable.ListBuffer[TreeNode]()
@@ -30,18 +32,22 @@ class CustomSQLListener extends SQLListener(SparkContext.getOrCreate().getConf) 
       val leafs = getLeafs(treeNodes)
       val root = getRoot(treeNodes)
 
-      val metrics = generateMetrics(root, leafs, q)
-      registerSource(metrics)
+      val m = generateMetrics(root, leafs, q)
+      registerSource(m)
+      processedExecutions += q.executionId
     })
   }
 
-  override def onOtherEvent(event: SparkListenerEvent): Unit = synchronized {
-    super.onOtherEvent(event)
-    if (event.isInstanceOf[SparkListenerSQLExecutionEnd]) process()
+  override def onOtherEvent(event: SparkListenerEvent): Unit =  {
+    synchronized { super.onOtherEvent(event) }
+    if (event.isInstanceOf[SparkListenerSQLExecutionEnd])
+      {
+        synchronized { process() }
+      }
   }
 
   def generateMetrics(root: TreeNode, leafs: Seq[TreeNode], q: SQLExecutionUIData): mutable.Map[String, Long] = {
-    val metrics = scala.collection.mutable.Map[String, Long]()
+    val metrics: mutable.Map[String, Long] = scala.collection.mutable.Map[String, Long]()
     metrics.update("execution_" + q.executionId + "_number_of_output_rows", getNumberOfOutputRows(root))
     var i: Int = 0
     leafs.foreach(l => {
@@ -83,6 +89,8 @@ class CustomSQLListener extends SQLListener(SparkContext.getOrCreate().getConf) 
         node.childs.foreach(c => queue.enqueue(c))
       }
     }
+
     AccumulatorCtx.get(accumulatorId).get.value.toString.toLong
+
   }
 }

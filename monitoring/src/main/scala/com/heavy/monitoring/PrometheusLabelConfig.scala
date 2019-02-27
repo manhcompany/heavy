@@ -1,12 +1,12 @@
 package com.heavy.monitoring
 
-class PrometheusConfig(val labelNames: Seq[String], val labels: Seq[String])
+class PrometheusLabelConfig(val labelNames: Seq[String], val labels: Seq[String])
 
-object PrometheusConfig {
-  var _instance: PrometheusConfig = _
+object PrometheusLabelConfig {
+  var _instance: PrometheusLabelConfig = _
 
   def init(labelNames: Seq[String], labels: Seq[String]) : Unit = {
-    _instance = new PrometheusConfig(labelNames, labels)
+    _instance = new PrometheusLabelConfig(labelNames, labels)
   }
 
   def getLabels: Seq[String] = {

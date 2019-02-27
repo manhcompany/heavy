@@ -1,7 +1,7 @@
 package com.heavy.etl.utils
 
 import com.heavy.core.stackmachine.StackMachine
-import com.heavy.monitoring.{PrometheusConfig, QueryExecutionListener, QueryExecutionSource}
+import com.heavy.monitoring.{PrometheusLabelConfig, QueryExecutionListener, QueryExecutionSource}
 import org.apache.spark.SparkEnv
 import org.apache.spark.heavy.accumulator.AccumulatorCtx
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart, SparkListenerStageCompleted}
@@ -19,17 +19,17 @@ class StackMachineTest extends FlatSpec {
 
   it should "test config" in {
 
-    class CustomSparkListener extends SparkListener {
-      override def onJobStart(jobStart: SparkListenerJobStart) {
-        println(s"Job started with ${jobStart.stageInfos.size} stages: $jobStart")
-      }
+//    class CustomSparkListener extends SparkListener {
+//      override def onJobStart(jobStart: SparkListenerJobStart) {
+//        println(s"Job started with ${jobStart.stageInfos.size} stages: $jobStart")
+//      }
+//
+//      override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
+//        println(s"Stage ${stageCompleted.stageInfo.stageId} completed with ${stageCompleted.stageInfo.numTasks} tasks.")
+//      }
+//    }
 
-      override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
-        println(s"Stage ${stageCompleted.stageInfo.stageId} completed with ${stageCompleted.stageInfo.numTasks} tasks.")
-      }
-    }
-
-    PrometheusConfig.init(List("date", "ds"), List("20190111", "voice"))
+//    PrometheusLabelConfig.init(List("date", "ds"), List("20190111", "voice"))
     val config = Config.loadConfig("etl")
     val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
     SparkCommon.getSparkSession("SparkIntercept")
@@ -37,6 +37,11 @@ class StackMachineTest extends FlatSpec {
 //    val sqlHistoryListener = new SQLHistoryListener(SparkCommon.getSparkContext.getConf)
 //    SparkCommon.getSparkContext.addSparkListener(sqlListener)
 //    SparkCommon.getSparkSession().sessionState.listenerManager.register(new QueryExecutionListener())
+    StackMachine.execute[DataFrame](operators)
+    StackMachine.execute[DataFrame](operators)
+    StackMachine.execute[DataFrame](operators)
+//    println("============")
+    StackMachine.execute[DataFrame](operators)
     StackMachine.execute[DataFrame](operators)
     StackMachine.execute[DataFrame](operators)
 //    val counter = SparkCommon.getSparkContext.longAccumulator("counter")
@@ -79,7 +84,7 @@ class StackMachineTest extends FlatSpec {
 //  }
 //
 //  it should "test scallop" in {
-//    class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
+//    class com.heavy.monitoring.Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
 //      val apples = opt[Int](required = true)
 //      val bananas = opt[Int]()
 //      val name = trailArg[String]()
