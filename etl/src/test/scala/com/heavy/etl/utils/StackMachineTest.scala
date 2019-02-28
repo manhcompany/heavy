@@ -47,9 +47,9 @@ class StackMachineTest extends FlatSpec {
 //    val counter = SparkCommon.getSparkContext.longAccumulator("counter")
 //    SparkCommon.getSparkContext.parallelize(1 to 9).foreach(x => counter.add(x))
     println("End")
-    while (true) {
-      1 + 1
-    }
+//    while (true) {
+//      1 + 1
+//    }
 //    sqlListener.getCompletedExecutions
 //    AccumulatorCtx.get()
   }

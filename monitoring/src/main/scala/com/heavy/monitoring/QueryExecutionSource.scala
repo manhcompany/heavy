@@ -12,9 +12,9 @@ class QueryExecutionSource(sc: SparkContext) extends Source with Logging{
 
   override val metricRegistry: MetricRegistry = new MetricRegistry()
 
-  def register(metrics: mutable.Map[String, Long]): Unit = {
+  def register(metrics: mutable.Map[String, Long], executionId: Int): Unit = {
     metrics.foreach(metric => {
-      metricRegistry.register(metric._1, new Gauge[Long] {
+      metricRegistry.register(s"query_execution_${executionId}_${metric._1}", new Gauge[Long] {
         override def getValue: Long = metric._2
       })
     })
