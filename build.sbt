@@ -1,6 +1,7 @@
-import sbt.Keys.libraryDependencies
+import com.typesafe.sbt.packager.MappingsHelper.fromClasspath
+import sbt.Keys.{libraryDependencies, name}
 
-val sparkV = "2.2.0"
+val sparkV = "2.1.1"
 
 lazy val commonDependencies = Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.9.2",
@@ -67,6 +68,13 @@ lazy val etl = (project in file("etl"))
         libraryDependencies:=sparkDependencies ++ commonDependencies ++ elasticsearchDependencies,
         name:="etl")
 
+lazy val spark_ext = (project in file("spark-extension"))
+  .settings(
+    commonSettings,
+    libraryDependencies:=sparkDependencies ++ commonDependencies,
+    name:="spark-extension"
+  )
+
 lazy val monitoring = (project in file("monitoring"))
   .dependsOn(core)
   .settings(
@@ -76,5 +84,11 @@ lazy val monitoring = (project in file("monitoring"))
   )
 
 lazy val root = (project in file("."))
-    .settings(commonSettings, name:="heavy")
+    .settings(
+      commonSettings,
+      name:="heavy",
+      packageName in Universal := packageName.value + "-" + version.value,
+      mappings in Universal ++= fromClasspath((managedClasspath in Runtime).value, "lib", _ => true)
+    )
+    .enablePlugins(UniversalPlugin)
     .aggregate(core, etl, monitoring)
