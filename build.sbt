@@ -65,7 +65,7 @@ lazy val etl = (project in file("etl"))
       .dependsOn(core, monitoring)
       .settings(
         commonSettings,
-        libraryDependencies:=sparkDependencies ++ commonDependencies ++ elasticsearchDependencies,
+        libraryDependencies:=(sparkDependencies ++ elasticsearchDependencies).map(d => d.withConfigurations(None) % Provided) ++ commonDependencies,
         name:="etl")
 
 lazy val spark_ext = (project in file("spark-extension"))
