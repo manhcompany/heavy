@@ -21,12 +21,5 @@ object SparkQueryListenerInterceptor extends SparkQueryListenerInterceptor {
       .map(_.getClass())
       .map(x => x.newInstance())
       .foreach(x => spark.sessionState.listenerManager.register(x))
-
-    ServiceLoader.load(classOf[SQLListener])
-      .asScala
-      .toList
-      .map(_.getClass())
-      .map(x => x.newInstance())
-      .foreach(x => spark.sparkContext.addSparkListener(x))
   }
 }
