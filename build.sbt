@@ -1,7 +1,7 @@
 import com.typesafe.sbt.packager.MappingsHelper.fromClasspath
 import sbt.Keys.{libraryDependencies, name}
 
-val sparkV = "2.1.1"
+val sparkV = "2.2.0"
 
 lazy val commonDependencies = Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.9.2",
@@ -17,7 +17,7 @@ lazy val commonDependencies = Seq(
 lazy val sparkDependencies = Seq(
   "org.apache.spark" %% "spark-core" % sparkV % "provided",
   "org.apache.spark" %% "spark-sql" % sparkV % "provided",
-  "org.apache.spark" %% "spark-hive" % sparkV,
+  "org.apache.spark" %% "spark-hive" % sparkV % "provided",
   "org.eclipse.jetty" % "jetty-servlet" % "9.4.14.v20181114"
 )
 
@@ -88,7 +88,12 @@ lazy val root = (project in file("."))
       commonSettings,
       name:="heavy",
       packageName in Universal := packageName.value + "-" + version.value,
-      mappings in Universal ++= fromClasspath((managedClasspath in Runtime).value, "lib", _ => true)
+      mappings in Universal ++= fromClasspath((managedClasspath in Runtime).value, "lib", _ => true),
+      mappings in Universal ++= Seq(
+        (etl / assembly).value,
+        (core / Compile / packageBin).value,
+        (monitoring / assemblyPackageDependency).value
+      ).map(jar => jar -> ("lib/" + jar.getName))
     )
     .enablePlugins(UniversalPlugin)
     .aggregate(core, etl, monitoring)
