@@ -1,9 +1,8 @@
-package org.apache.spark.sql.execution.ui.heavy
+package org.apache.spark.metrics.source
 
 import com.codahale.metrics.{Gauge, MetricRegistry}
-import com.heavy.core.utils.Logging
 import org.apache.spark.SparkContext
-import org.apache.spark.heavy.metrics.Source
+import org.apache.spark.internal.Logging
 
 import scala.collection.mutable
 

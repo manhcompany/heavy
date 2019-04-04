@@ -1,14 +1,13 @@
-package org.apache.spark.heavy.metrics
+package org.apache.spark.metrics.sink
 
 import java.util
-import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics._
 import com.heavy.core.utils.Logging
 import com.heavy.monitoring.{PrometheusLabelConfig, SparkApplicationMetricFilter}
-import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.exporter.PushGateway
 import org.apache.spark.SparkContext
 
 import scala.collection.JavaConversions._

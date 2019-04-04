@@ -1,6 +1,7 @@
 package com.heavy.monitoring
 
-import com.heavy.core.utils.Logging
+import org.apache.spark.internal.Logging
+import org.apache.spark.metrics.source.QueryExecutionSource
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.sql.execution.QueryExecution
 
@@ -11,7 +12,6 @@ class QueryExecutionListener extends org.apache.spark.sql.util.QueryExecutionLis
   val sources = List(new QueryExecutionSource(SparkContext.getOrCreate()))
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = synchronized {
     if(funcName.equals("save")) {
-      log.info(s"Duration = $durationNs ns")
       val metrics = createMetricsMap(qe, Map("durationns" -> durationNs))
       sources.foreach(source => {
         source.register(metrics, _currentQueryExecutionId)

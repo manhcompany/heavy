@@ -1,6 +1,4 @@
-package org.apache.spark.sql.execution.ui.heavy
-
-import org.apache.spark.sql.execution.ui.SparkPlanGraphNode
+package org.apache.spark.sql.execution.ui
 
 import scala.collection.mutable.ListBuffer
 

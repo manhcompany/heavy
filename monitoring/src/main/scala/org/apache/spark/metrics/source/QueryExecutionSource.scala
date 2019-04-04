@@ -1,13 +1,11 @@
-package com.heavy.monitoring
+package org.apache.spark.metrics.source
 
 import com.codahale.metrics._
-import com.heavy.core.utils.Logging
 import org.apache.spark.SparkContext
-import org.apache.spark.heavy.metrics.Source
 
 import scala.collection.mutable
 
-class QueryExecutionSource(sc: SparkContext) extends Source with Logging{
+class QueryExecutionSource(sc: SparkContext) extends Source {
   override val sourceName: String = sc.appName
 
   override val metricRegistry: MetricRegistry = new MetricRegistry()

@@ -1,8 +1,8 @@
-package org.apache.spark.sql.execution.ui.heavy
+package org.apache.spark.sql.execution.ui
 
 import org.apache.spark.heavy.accumulator.AccumulatorCtx
+import org.apache.spark.metrics.source.CustomSQLListenerSource
 import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.execution.ui.{SQLExecutionUIData, SQLListener, SparkListenerSQLExecutionEnd, SparkPlanGraphCluster}
 import org.apache.spark.{SparkContext, SparkEnv}
 
 import scala.collection.mutable

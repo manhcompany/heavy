@@ -1,4 +1,4 @@
-package org.apache.spark.heavy.metrics
+package org.apache.spark.metrics.sink
 
 import java.util.Properties
 import java.util.concurrent.TimeUnit
