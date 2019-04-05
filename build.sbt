@@ -25,13 +25,6 @@ lazy val elasticsearchDependencies = Seq(
   "org.elasticsearch" %% "elasticsearch-spark-20" % "5.5.3"
 )
 
-lazy val prometheusDependencies = Seq(
-  "io.prometheus" % "simpleclient" % "0.6.0",
-  "io.prometheus" % "simpleclient_hotspot" % "0.6.0",
-  "io.prometheus" % "simpleclient_httpserver" % "0.6.0",
-  "io.prometheus" % "simpleclient_pushgateway" % "0.6.0"
-)
-
 lazy val commonSettings = Seq(
   organization := "com.heavy",
   version := "0.1.0-SNAPSHOT",
@@ -62,7 +55,7 @@ lazy val core = (project in file("core"))
       libraryDependencies:=commonDependencies)
 
 lazy val etl = (project in file("etl"))
-      .dependsOn(core, monitoring)
+      .dependsOn(core)
       .settings(
         commonSettings,
         libraryDependencies:=(sparkDependencies ++ elasticsearchDependencies).map(d => d.withConfigurations(None) % Provided) ++ commonDependencies,
@@ -75,14 +68,6 @@ lazy val spark_ext = (project in file("spark-extension"))
     name:="spark-extension"
   )
 
-lazy val monitoring = (project in file("monitoring"))
-  .dependsOn(core)
-  .settings(
-    commonSettings,
-    name:="monitoring",
-    libraryDependencies:=sparkDependencies ++ commonDependencies ++ prometheusDependencies
-  )
-
 lazy val root = (project in file("."))
     .settings(
       commonSettings,
@@ -91,9 +76,9 @@ lazy val root = (project in file("."))
       mappings in Universal ++= fromClasspath((managedClasspath in Runtime).value, "lib", _ => true),
       mappings in Universal ++= Seq(
         (etl / assembly).value,
-        (core / Compile / packageBin).value,
-        (monitoring / assemblyPackageDependency).value
+        (spark_ext / Compile / packageBin ).value,
+        (core / Compile / packageBin).value
       ).map(jar => jar -> ("lib/" + jar.getName))
     )
     .enablePlugins(UniversalPlugin)
-    .aggregate(core, etl, monitoring)
+    .aggregate(core, etl, spark_ext)
