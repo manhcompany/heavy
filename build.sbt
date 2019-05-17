@@ -76,6 +76,7 @@ lazy val root = (project in file("."))
       mappings in Universal ++= fromClasspath((managedClasspath in Runtime).value, "lib", _ => true),
       mappings in Universal ++= Seq(
         (etl / assembly).value,
+        (etl / Compile / packageBin ).value,
         (spark_ext / Compile / packageBin ).value,
         (core / Compile / packageBin).value
       ).map(jar => jar -> ("lib/" + jar.getName))
