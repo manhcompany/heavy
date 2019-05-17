@@ -16,7 +16,7 @@ object SparkCommon {
     if(spark == null) {
       spark = SparkSession
         .builder()
-        .config("hive.metastore.uris", "thrift://localhost:9083")
+//        .config("hive.metastore.uris", "thrift://localhost:9083")
         .appName(appName)
         .enableHiveSupport()
         .getOrCreate()

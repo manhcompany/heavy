@@ -1,2 +1,3 @@
 com.heavy.etl.utils.SparkOperator
 com.heavy.etl.utils.HiveOperator
+com.heavy.etl.utils.DataValidationOperator
