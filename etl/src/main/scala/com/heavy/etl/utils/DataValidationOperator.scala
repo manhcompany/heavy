@@ -25,8 +25,20 @@ class DataValidationOperator extends SparkOperatorFactory {
             describeResult.select(colName).filter(s"summary = '${summaries.head}'").first().get(0).asInstanceOf[String].toDouble)).toDF(columns: _*)
         )((result, summary) => result.union(Seq((timestamp, config.date, config.dataset, colName, summary,
           describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)).toDF(columns: _*)))
-      })).map(x => x.reduce((a, b) => a.union(b)))
+      })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
+      result.map(x => List(x))
+    }
+  }
+
+  class FacetOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+    val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
+    val timestamp: Long = System.currentTimeMillis / 1000
+
+    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+      val result = config.cols.map(col => col.map(c => {
+        operands.head.groupBy(c).count.selectExpr(s"'$timestamp' as timestamp", s"'${config.date.get}' as date_time", s"'${config.dataset.get}' as dataset", s"'$c' as column_name", s"$c as key", "count as value")
+      }).reduce(_ union _))
       result.map(x => List(x))
     }
   }
@@ -35,6 +47,7 @@ class DataValidationOperator extends SparkOperatorFactory {
     Try(Some(new ShowDataFrame(
       config.name match {
         case "describe" => new DescribeOperator(config)
+        case "facet" => new FacetOperator(config)
       }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }
