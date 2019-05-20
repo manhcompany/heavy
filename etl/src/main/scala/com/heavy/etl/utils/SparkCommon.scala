@@ -1,6 +1,5 @@
 package com.heavy.etl.utils
 
-import com.heavy.etl.monitor.SparkQueryListenerInterceptor
 import com.heavy.etl.udfs.SparkUdfInterceptor
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
@@ -17,11 +16,11 @@ object SparkCommon {
     if(spark == null) {
       spark = SparkSession
         .builder()
+//        .config("hive.metastore.uris", "thrift://localhost:9083")
         .appName(appName)
         .enableHiveSupport()
         .getOrCreate()
       SparkUdfInterceptor.intercept(spark)
-      SparkQueryListenerInterceptor.intercept(spark)
     }
     spark
   }

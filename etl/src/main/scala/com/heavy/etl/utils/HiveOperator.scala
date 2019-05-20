@@ -33,7 +33,11 @@ class HiveOperator extends SparkOperatorFactory {
         case Some(opts) => opts.foldLeft(writeFormat)((writer, opt) => writer.option(opt.key, opt.value))
         case None => writeFormat
       }
-      writerFinal.saveAsTable(config.path.get)
+
+      def write(): Unit = {
+        writerFinal.insertInto(config.path.get)
+      }
+      write()
       None
     }
   }
