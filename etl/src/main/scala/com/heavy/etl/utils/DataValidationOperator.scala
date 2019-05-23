@@ -23,7 +23,7 @@ class DataValidationOperator extends SparkOperatorFactory {
         summaries.map(summary => {
           val value = Try(describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)
             .getOrElse(null.asInstanceOf[Double])
-          Seq((timestamp, config.date, config.dataset, colName, summary, value
+          Seq((timestamp, config.date, config.dataset, s"desc_$colName", summary, value
           )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
@@ -37,7 +37,13 @@ class DataValidationOperator extends SparkOperatorFactory {
 
     override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
       val result = config.cols.map(col => col.map(c => {
-        operands.head.groupBy(c).count.selectExpr(s"'$timestamp' as time_stamp", s"'${config.date.get}' as date_time", s"'${config.dataset.get}' as dataset", s"'$c' as column_name", s"$c as key", "count as value")
+        operands.head.groupBy(c).count.selectExpr(
+          s"'$timestamp' as time_stamp",
+          s"'${config.date.get}' as date_time",
+          s"'${config.dataset.get}' as dataset",
+          s"'facet_$c' as column_name",
+          s"$c as key",
+          "count as value")
       }).reduce(_ union _))
       result.map(x => List(x))
     }
