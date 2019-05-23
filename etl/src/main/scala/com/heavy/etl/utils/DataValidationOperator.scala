@@ -19,9 +19,12 @@ class DataValidationOperator extends SparkOperatorFactory {
       val result = config.describeCols.map(x => x.map(describeOpt => {
         val colName = describeOpt.col
         val summaries = describeOpt.summary
-        summaries.map(summary =>
-          Seq((timestamp, config.date, config.dataset, colName, summary,
-          describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)).toDF(columns: _*)).reduce(_ union _)
+
+        summaries.map(summary => {
+          val value = Try(describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)
+            .getOrElse(null.asInstanceOf[Double])
+          Seq((timestamp, config.date, config.dataset, colName, summary, value
+          )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
       result.map(x => List(x))
