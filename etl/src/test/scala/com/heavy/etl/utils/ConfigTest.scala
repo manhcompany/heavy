@@ -1,6 +1,7 @@
 package com.heavy.etl.utils
 
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
+import org.apache.spark.sql.types.StructField
 import org.scalatest.FlatSpec
 
 class ConfigTest extends FlatSpec {
@@ -36,5 +37,16 @@ class ConfigTest extends FlatSpec {
     assertResult("20181028") {
       config.operators.head.name
     }
+  }
+
+  it should "pass collect" in {
+    val mens = List("a", "b")
+    val womens = List("c", "d")
+    val result = (mens zip womens).collect {
+      case name: (String, String) => name._1
+    }
+    StructField
+    print(result)
+    assertResult(1)(1)
   }
 }
