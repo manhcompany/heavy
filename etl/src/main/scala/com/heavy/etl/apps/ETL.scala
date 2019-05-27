@@ -1,6 +1,6 @@
 package com.heavy.etl.apps
 
-import com.heavy.core.stackmachine.StackMachine
+import com.heavy.core.stackmachine.CanonicalStackMachine
 import com.heavy.core.utils.Logging
 import com.heavy.etl.utils.{Config, SparkOperatorFactory}
 import org.apache.spark.sql.DataFrame
@@ -10,6 +10,6 @@ object ETL extends Logging{
     val config = Config.loadConfig("etl")
     val operators = config.operators.map(x => SparkOperatorFactory.factory(x).get)
     log.info(operators.toString())
-    StackMachine.execute[DataFrame](operators)
+    CanonicalStackMachine.execute[DataFrame](operators)
   }
 }
