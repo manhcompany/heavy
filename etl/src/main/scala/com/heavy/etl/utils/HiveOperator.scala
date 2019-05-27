@@ -8,7 +8,7 @@ import scala.util.Try
 class HiveOperator extends SparkOperatorFactory {
 
   class SaveAsTableOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: Option[DataFrame]*): Either[String, Option[List[DataFrame]]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val writePartitions = config.partitions match {
         case Some(nop) => operands.head.get.repartition(nop)
         case None => operands.head.get

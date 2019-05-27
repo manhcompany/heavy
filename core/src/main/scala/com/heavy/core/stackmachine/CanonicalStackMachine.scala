@@ -18,8 +18,10 @@ object CanonicalStackMachine extends AbstractStackMachine {
             else s.push(None)
           case None => s
         }
-        case Left(label) =>
-          executeBranch(branches(label), stack, branches)
+        case Left(label) => label match {
+          case Some(lableStr) => executeBranch(branches(lableStr), stack, branches)
+          case None => s
+        }
       }
     })
   }
