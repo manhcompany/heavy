@@ -8,22 +8,26 @@ import org.apache.spark.sql.functions._
 import scala.util.Try
 
 abstract class OperatorDecorator(decoratedOperator: Operator[DataFrame]) extends Operator[DataFrame] {
-  override def execute(operands: DataFrame*): Option[List[DataFrame]] = decoratedOperator.execute(operands: _*)
+  override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = decoratedOperator.execute(operands: _*)
 }
 
 class ShowDataFrame(decoratedOperator: Operator[DataFrame]) extends OperatorDecorator(decoratedOperator) with Logging {
   override def getNumberOperator: Int = decoratedOperator.getNumberOperator
 
-  override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+  override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
     val result = decoratedOperator.execute(operands: _*)
     result match {
-      case Some(dfs) =>
-        log.info("Schema")
-        dfs.foreach(df => log.info(df.show.toString))
-        log.info("Planning")
-//        dfs.foreach(df => df.explain(true))
-        result
-      case None => None
+      case Right(odfs) =>
+        odfs match {
+          case Some(dfs) =>
+            log.info("Schema")
+            dfs.foreach(df => log.info(df.show.toString))
+            log.info("Planning")
+//            dfs.foreach(df => df.explain(true))
+            result
+          case None => Right(None)
+        }
+      case Left(_) => Right(None)
     }
   }
 }
@@ -33,7 +37,7 @@ class SparkOperator extends SparkOperatorFactory {
   var aliases: Map[String, DataFrame] = Map()
 
   class InputOperator(config: OperatorConfig) extends Operand[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val spark = SparkCommon.getSparkSession()
       val readerFormat = config.format match {
         case Some(f) => spark.read.format(f)
@@ -44,15 +48,15 @@ class SparkOperator extends SparkOperatorFactory {
         case Some(opt) => opt.foldLeft(readerFormat)((r, o) => r.option(o.key, o.value))
         case None => readerFormat
       }
-      Some(List(readerOpts.load(config.path.get)))
+      Right(Some(List(readerOpts.load(config.path.get))))
     }
   }
 
   class OutputOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val writePartitions = config.partitions match {
-        case Some(nop) => operands.head.repartition(nop)
-        case None => operands.head
+        case Some(nop) => operands.head.get.repartition(nop)
+        case None => operands.head.get
       }
 
       val writerPartitionBy = config.partitionBy match {
@@ -75,25 +79,25 @@ class SparkOperator extends SparkOperatorFactory {
         case None => writeFormat
       }
       writerFinal.save(config.path.get)
-      None
+      Right(None)
     }
   }
 
   class JoinOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val dfL = operands(1)
-      val dfR = operands(0)
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      val dfL = operands(1).get
+      val dfR = operands(0).get
       dfL.createOrReplaceTempView("dfl")
       dfR.createOrReplaceTempView("dfr")
       val spark = SparkCommon.getSparkSession()
-      Some(List(spark.sql(s"select ${config.select.get.head} from dfl ${config.joinType.getOrElse("inner")} join dfr on ${config.conditions.get}")))
+      Right(Some(List(spark.sql(s"select ${config.select.get.head} from dfl ${config.joinType.getOrElse("inner")} join dfr on ${config.conditions.get}"))))
     }
   }
 
   class SelectOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val df = operands.head
-      Some(List(df.selectExpr(config.select.get: _*)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      val df = operands.head.get
+      Right(Some(List(df.selectExpr(config.select.get: _*))))
     }
   }
 
@@ -102,90 +106,96 @@ class SparkOperator extends SparkOperatorFactory {
       config.numberOfInput.getOrElse(2)
     }
 
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Some(List(operands.tail.foldLeft(operands.head)((r, d) => r.union(d))))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Some(List(operands.tail.foldLeft(operands.head.get)((r, d) => r.union(d.get)))))
     }
   }
 
   class DeduplicateOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       config.cols match {
-        case Some(cs) => Some(List(operands.head.dropDuplicates(cs)))
-        case None => Some(List(operands.head.dropDuplicates()))
+        case Some(cs) => Right(Some(List(operands.head.get.dropDuplicates(cs))))
+        case None => Right(Some(List(operands.head.get.dropDuplicates())))
       }
     }
   }
 
   class DropOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Some(List(operands.head.drop(config.cols.get: _*)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Some(List(operands.head.get.drop(config.cols.get: _*))))
     }
   }
 
   class RenameOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Some(List(config.renamed.get.foldLeft(operands.head)((df, col) => df.withColumnRenamed(col._1, col._2))))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Some(List(config.renamed.get.foldLeft(operands.head.get)((df, col) => df.withColumnRenamed(col._1, col._2)))))
     }
   }
 
   class FilterOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Some(List(operands.head.filter(config.conditions.get)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Some(List(operands.head.get.filter(config.conditions.get))))
     }
   }
 
   class AliasOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      aliases += (config.aliasName.get -> operands.head)
-      None
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      aliases += (config.aliasName.get -> operands.head.get)
+      Right(None)
     }
   }
 
   class LoadAliasOperator(config: OperatorConfig) extends Operand[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Some(List(aliases(config.aliasName.get)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Some(List(aliases(config.aliasName.get))))
     }
   }
 
   class IncrementalOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val df = operands(1)
-      val maxCurrentId = operands(0).collect().filter(!_.isNullAt(0)).map(_.getLong(0)).headOption.getOrElse(0L) + 1L
-      Some(List(df.withColumn(config.cols.get.head, monotonically_increasing_id() + maxCurrentId)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      val df = operands(1).get
+      val maxCurrentId = operands(0).get.collect().filter(!_.isNullAt(0)).map(_.getLong(0)).headOption.getOrElse(0L) + 1L
+      Right(Some(List(df.withColumn(config.cols.get.head, monotonically_increasing_id() + maxCurrentId))))
     }
   }
 
   class ExceptOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      val dff = operands(1)
-      val dfs = operands(0)
-      Some(List(dff.except(dfs)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      val dff = operands(1).get
+      val dfs = operands(0).get
+      Right(Some(List(dff.except(dfs))))
     }
   }
 
   class SqlOperator(config: OperatorConfig) extends Operand[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val spark = SparkCommon.getSparkSession()
-      Some(List(spark.sql(config.query.get)))
+      Right(Some(List(spark.sql(config.query.get))))
     }
   }
 
   class RegisterTempView(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      operands.head.createOrReplaceTempView(config.viewName.get)
-      None
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      operands.head.get.createOrReplaceTempView(config.viewName.get)
+      Right(None)
     }
   }
 
   class Repartition(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
-      Option(List(operands.head.repartition(config.partitions.get)))
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      Right(Option(List(operands.head.get.repartition(config.partitions.get))))
     }
   }
 
   override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
-    Try(Option(new ShowDataFrame(
+    Try(Option(
           config.name match {
+            case "if" => new IfOperator[DataFrame](config.left, config.right) {
+              override def processOperand(operand: DataFrame): Unit = {
+                operand.show()
+              }
+            }
+            case "label" => new StartLabelOperator[DataFrame](config.label.get)
             case "input" => new InputOperator(config)
             case "output" => new OutputOperator(config)
             case "select" => new SelectOperator(config)
@@ -201,7 +211,7 @@ class SparkOperator extends SparkOperatorFactory {
             case "sql" => new SqlOperator(config)
             case "view" => new RegisterTempView(config)
             case "repartition" => new Repartition(config)
-          }))
+          })
     ).map(d => d).recover { case _: Throwable => None }.get
   }
 }

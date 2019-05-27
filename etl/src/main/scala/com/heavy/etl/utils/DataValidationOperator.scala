@@ -1,6 +1,6 @@
 package com.heavy.etl.utils
 
-import com.heavy.core.stackmachine.{Operator, UnaryOperator}
+import com.heavy.core.stackmachine.{BinaryOperator, Operator, UnaryOperator}
 import org.apache.spark.sql.DataFrame
 
 import scala.util.Try
@@ -10,11 +10,11 @@ class DataValidationOperator extends SparkOperatorFactory {
   class DescribeOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
       val cols = config.describeCols.map(x => x.map(x => x.col)).get
-      val describeResult = operands.head.describe(cols = cols: _*)
+      val describeResult = operands.head.get.describe(cols = cols: _*)
       describeResult.cache()
       val result = config.describeCols.map(x => x.map(describeOpt => {
         val colName = describeOpt.col
@@ -27,7 +27,7 @@ class DataValidationOperator extends SparkOperatorFactory {
           )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
-      result.map(x => List(x))
+      Right(result.map(x => List(x)))
     }
   }
 
@@ -35,9 +35,9 @@ class DataValidationOperator extends SparkOperatorFactory {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
 
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
       val result = config.cols.map(col => col.map(c => {
-        operands.head.groupBy(c).count.selectExpr(
+        operands.head.get.groupBy(c).count.selectExpr(
           s"'$timestamp' as time_stamp",
           s"'${config.date.get}' as date_time",
           s"'${config.dataset.get}' as dataset",
@@ -45,7 +45,36 @@ class DataValidationOperator extends SparkOperatorFactory {
           s"$c as key",
           "count as value")
       }).reduce(_ union _))
-      result.map(x => List(x))
+      Right(result.map(x => List(x)))
+    }
+  }
+
+  /**
+    * Check schema of dataframe
+    * @param config
+    */
+  class SchemaValidationOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
+    /**
+      * Check schema of dataframe
+      * originalDf
+      * newDf
+      * @param operands
+      * @return Right(Some(List())) if newDf and originalDf schema are the same
+      *         Right(Some(List(df))) if newDf and originalDf schema are the difference
+      */
+    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+      val sqlContext = SparkCommon.getSparkSession().sqlContext
+      import sqlContext.implicits._
+
+      val columns: Seq[String] = Seq("field_name", "field_data_type", "field_nullable")
+      val originalDf = operands.head.get
+      val newDf = operands.tail.head.get
+      val missingFields = originalDf.schema.fields filterNot newDf.schema.fields.contains
+      if(missingFields.nonEmpty) {
+        Right(Some(List(missingFields.map(field => Seq((field.name, field.dataType.toString, field.nullable)).toDF(columns:_*)).reduce(_ union _))))
+      } else {
+        Right(Some(List()))
+      }
     }
   }
 
@@ -54,6 +83,7 @@ class DataValidationOperator extends SparkOperatorFactory {
       config.name match {
         case "describe" => new DescribeOperator(config)
         case "facet" => new FacetOperator(config)
+        case "schema-validation" => new SchemaValidationOperator(config)
       }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }
