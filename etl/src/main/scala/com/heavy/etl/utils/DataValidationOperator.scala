@@ -1,6 +1,6 @@
 package com.heavy.etl.utils
 
-import com.heavy.core.stackmachine.{Operator, UnaryOperator}
+import com.heavy.core.stackmachine.{BinaryOperator, Operator, UnaryOperator}
 import org.apache.spark.sql.DataFrame
 
 import scala.util.Try
@@ -46,6 +46,35 @@ class DataValidationOperator extends SparkOperatorFactory {
           "count as value")
       }).reduce(_ union _))
       Right(result.map(x => List(x)))
+    }
+  }
+
+  /**
+    * Check schema of dataframe
+    * @param config
+    */
+  class SchemaValidationOperator(config: OperatorConfig) extends BinaryOperator[DataFrame] {
+    /**
+      * Check schema of dataframe
+      * originalDf
+      * newDf
+      * @param operands
+      * @return Right(Some(List())) if newDf and originalDf schema are the same
+      *         Right(Some(List(df))) if newDf and originalDf schema are the difference
+      */
+    override def execute(operands: Option[DataFrame]*): Either[String, Option[List[DataFrame]]] = {
+      val sqlContext = SparkCommon.getSparkSession().sqlContext
+      import sqlContext.implicits._
+
+      val columns: Seq[String] = Seq("field_name", "field_data_type", "field_nullable")
+      val originalDf = operands.head.get
+      val newDf = operands.tail.head.get
+      val missingFields = originalDf.schema.fields filterNot newDf.schema.fields.contains
+      if(missingFields.nonEmpty) {
+        Right(Some(List(missingFields.map(field => Seq((field.name, field.dataType, field.nullable)).toDF(columns:_*)).reduce(_ union _))))
+      } else {
+        Right(Some(List()))
+      }
     }
   }
 
