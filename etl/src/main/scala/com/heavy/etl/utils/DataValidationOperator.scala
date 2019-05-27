@@ -10,11 +10,11 @@ class DataValidationOperator extends SparkOperatorFactory {
   class DescribeOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[String, Option[List[DataFrame]]] = {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
       val cols = config.describeCols.map(x => x.map(x => x.col)).get
-      val describeResult = operands.head.describe(cols = cols: _*)
+      val describeResult = operands.head.get.describe(cols = cols: _*)
       describeResult.cache()
       val result = config.describeCols.map(x => x.map(describeOpt => {
         val colName = describeOpt.col
@@ -27,7 +27,7 @@ class DataValidationOperator extends SparkOperatorFactory {
           )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
-      result.map(x => List(x))
+      Right(result.map(x => List(x)))
     }
   }
 
@@ -35,9 +35,9 @@ class DataValidationOperator extends SparkOperatorFactory {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
 
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[String, Option[List[DataFrame]]] = {
       val result = config.cols.map(col => col.map(c => {
-        operands.head.groupBy(c).count.selectExpr(
+        operands.head.get.groupBy(c).count.selectExpr(
           s"'$timestamp' as time_stamp",
           s"'${config.date.get}' as date_time",
           s"'${config.dataset.get}' as dataset",
@@ -45,7 +45,7 @@ class DataValidationOperator extends SparkOperatorFactory {
           s"$c as key",
           "count as value")
       }).reduce(_ union _))
-      result.map(x => List(x))
+      Right(result.map(x => List(x)))
     }
   }
 

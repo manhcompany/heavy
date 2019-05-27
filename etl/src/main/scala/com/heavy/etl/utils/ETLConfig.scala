@@ -27,5 +27,8 @@ case class OperatorConfig
 // configs for describe validation
   describeCols: Option[List[DescribeOpt]],
   date: Option[String],
-  dataset: Option[String]
+  dataset: Option[String],
+  label: Option[String],
+  left: Option[String],
+  right: Option[String]
 )

@@ -8,10 +8,10 @@ import scala.util.Try
 class HiveOperator extends SparkOperatorFactory {
 
   class SaveAsTableOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
-    override def execute(operands: DataFrame*): Option[List[DataFrame]] = {
+    override def execute(operands: Option[DataFrame]*): Either[String, Option[List[DataFrame]]] = {
       val writePartitions = config.partitions match {
-        case Some(nop) => operands.head.repartition(nop)
-        case None => operands.head
+        case Some(nop) => operands.head.get.repartition(nop)
+        case None => operands.head.get
       }
 
       val writerPartitionBy = config.partitionBy match {
@@ -38,7 +38,7 @@ class HiveOperator extends SparkOperatorFactory {
         writerFinal.insertInto(config.path.get)
       }
       write()
-      None
+      Right(None)
     }
   }
 
