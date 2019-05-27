@@ -5,12 +5,8 @@ import scala.collection.mutable
 object CanonicalStackMachine extends AbstractStackMachine {
   override def execute[A](operators: Seq[Operator[A]]): Unit = {
     lazy val branches = getBranches[A](operators)
-
     val stack = mutable.Stack[Option[A]]()
-
-    val mainBranch = branches("main")
-
-    executeBranch[A](mainBranch, stack, branches)
+    executeBranch[A](branches("main"), stack, branches)
   }
 
   def executeBranch[A](operators: Seq[Operator[A]], stack: mutable.Stack[Option[A]], branches: Map[String, Seq[Operator[A]]]): mutable.Stack[Option[A]] = {
