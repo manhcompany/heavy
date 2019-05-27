@@ -71,7 +71,7 @@ class DataValidationOperator extends SparkOperatorFactory {
       val newDf = operands.tail.head.get
       val missingFields = originalDf.schema.fields filterNot newDf.schema.fields.contains
       if(missingFields.nonEmpty) {
-        Right(Some(List(missingFields.map(field => Seq((field.name, field.dataType, field.nullable)).toDF(columns:_*)).reduce(_ union _))))
+        Right(Some(List(missingFields.map(field => Seq((field.name, field.dataType.toString, field.nullable)).toDF(columns:_*)).reduce(_ union _))))
       } else {
         Right(Some(List()))
       }
@@ -83,6 +83,7 @@ class DataValidationOperator extends SparkOperatorFactory {
       config.name match {
         case "describe" => new DescribeOperator(config)
         case "facet" => new FacetOperator(config)
+        case "schema-validation" => new SchemaValidationOperator(config)
       }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }
