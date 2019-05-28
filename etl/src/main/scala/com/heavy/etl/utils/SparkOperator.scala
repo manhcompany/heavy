@@ -188,14 +188,8 @@ class SparkOperator extends SparkOperatorFactory {
   }
 
   override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
-    Try(Option(
+    Try(Some(new ShowDataFrame(
           config.name match {
-            case "if" => new IfOperator[DataFrame](config.left, config.right) {
-              override def processOperand(operand: DataFrame): Unit = {
-                operand.show()
-              }
-            }
-            case "label" => new StartLabelOperator[DataFrame](config.label.get)
             case "input" => new InputOperator(config)
             case "output" => new OutputOperator(config)
             case "select" => new SelectOperator(config)
@@ -211,7 +205,7 @@ class SparkOperator extends SparkOperatorFactory {
             case "sql" => new SqlOperator(config)
             case "view" => new RegisterTempView(config)
             case "repartition" => new Repartition(config)
-          })
+          }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }
 }

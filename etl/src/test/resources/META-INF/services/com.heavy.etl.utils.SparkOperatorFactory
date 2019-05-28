@@ -1,3 +1,4 @@
 com.heavy.etl.utils.SparkOperator
 com.heavy.etl.utils.HiveOperator
 com.heavy.etl.utils.DataValidationOperator
+com.heavy.etl.utils.BranchingOperator
