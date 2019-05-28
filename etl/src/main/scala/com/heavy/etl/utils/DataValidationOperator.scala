@@ -67,8 +67,8 @@ class DataValidationOperator extends SparkOperatorFactory {
       import sqlContext.implicits._
 
       val columns: Seq[String] = Seq("field_name", "field_data_type", "field_nullable")
-      val originalDf = operands.head.get
-      val newDf = operands.tail.head.get
+      val originalDf = operands.tail.head.get
+      val newDf = operands.head.get
       val missingFields = originalDf.schema.fields filterNot newDf.schema.fields.contains
       if(missingFields.nonEmpty) {
         Right(Some(List(missingFields.map(field => Seq((field.name, field.dataType.toString, field.nullable)).toDF(columns:_*)).reduce(_ union _))))

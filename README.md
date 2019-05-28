@@ -305,6 +305,7 @@ df.repartition(1)
   partitions = 1 
 }
 ```
+
 Equivalent:
 ```
 df.write
@@ -312,6 +313,98 @@ df.write
     .repartition(1)
     .saveAsTable("output_hive")
 ```
+
+### facet
+*facet* is unary operator
+```hocon
+{
+  name = "facet", date = "20190505"
+  dataset = "actress"
+  cols = ["age"]
+}
+``` 
+Equivalent:
+```
+df.groupBy("age").count
+```
+Result is a dataframe has 6 fields as below:
+```
++----------+---------+-------+-----------+---+-----+
+|time_stamp|date_time|dataset|column_name|key|value|
++----------+---------+-------+-----------+---+-----+
+|1558954759| 20190505|actress|  facet_age| 29|    1|
+|1558954759| 20190505|actress|  facet_age| 30|    1|
++----------+---------+-------+-----------+---+-----+
+```
+
+### describe
+*describe* is unary operator. 
+```hocon
+{
+  name = "describe", date = "20190505",
+  dataset = "actress"
+  describe-cols = [
+    {col: "name", summary: ["count"]},
+    {col: "age", summary: ["count", "mean", "stddev", "min", "max"]},
+    {col: "id", summary: ["count", "mean", "stddev", "min", "max"]}
+  ]
+}
+```
+This operator extracts data from `df.describe` spark build-in function. The result is dataframe has 6 fields as below:
+```
++----------+---------+-------+-----------+------+------------------+
+|time_stamp|date_time|dataset|column_name|   key|             value|
++----------+---------+-------+-----------+------+------------------+
+|1559013054| 20190505|actress|  desc_name| count|               2.0|
+|1559013054| 20190505|actress|   desc_age| count|               2.0|
+|1559013054| 20190505|actress|   desc_age|  mean|              29.5|
+|1559013054| 20190505|actress|   desc_age|stddev|0.7071067811865476|
+|1559013054| 20190505|actress|   desc_age|   min|              29.0|
+|1559013054| 20190505|actress|   desc_age|   max|              30.0|
+|1559013054| 20190505|actress|    desc_id| count|               2.0|
+|1559013054| 20190505|actress|    desc_id|  mean|               1.5|
+|1559013054| 20190505|actress|    desc_id|stddev|0.7071067811865476|
+|1559013054| 20190505|actress|    desc_id|   min|               1.0|
+|1559013054| 20190505|actress|    desc_id|   max|               2.0|
++----------+---------+-------+-----------+------+------------------+
+```
+
+### schema-validation
+*schema-validation* is binary operator
+```hocon
+{ name = "schema-validation" }
+```
+
+```
+Stack: DF2 DF1 -> DF3
+```
+This operator compares schema of 2 dataframes. The result is a dataframe `DF3` contains fields that are included in `DF1` but not included in `DF2` as below. If `DF1` and `DF2` are the same then return `empty`
+```
++----------+---------------+--------------+
+|field_name|field_data_type|field_nullable|
++----------+---------------+--------------+
+|    act_id|     StringType|          true|
++----------+---------------+--------------+
+```
+
+### if
+*if* is unary operator
+```hocon
+{ name = "if", left = "left_branch", right = "right_branch" }
+```
+```
+Stack: DF1 ->
+```
+
+* If **DF1** is **None** => goto **left_label**
+* If **DF1** is a **dataframe** => goto **right_label**
+* If **right_label** of **left_label** is not set then goto next operator
+
+### label
+```hocon
+{ name = "label", label = "left_branch" }
+```
+The `label` is operand.
 
 ## Intercept udf functions
 You need create a class that extended from **SparkUdfInterceptor** trait and implement **intercept(spark: SparkSession)** function. 
