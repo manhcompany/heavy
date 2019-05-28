@@ -10,7 +10,7 @@ class DataValidationOperator extends SparkOperatorFactory {
   class DescribeOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
       val cols = config.describeCols.map(x => x.map(x => x.col)).get
@@ -35,7 +35,7 @@ class DataValidationOperator extends SparkOperatorFactory {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
 
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val result = config.cols.map(col => col.map(c => {
         operands.head.get.groupBy(c).count.selectExpr(
           s"'$timestamp' as time_stamp",
@@ -62,7 +62,7 @@ class DataValidationOperator extends SparkOperatorFactory {
       * @return Right(Some(List())) if newDf and originalDf schema are the same
       *         Right(Some(List(df))) if newDf and originalDf schema are the difference
       */
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
 
