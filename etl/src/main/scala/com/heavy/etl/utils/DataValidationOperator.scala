@@ -3,6 +3,7 @@ package com.heavy.etl.utils
 import com.heavy.core.stackmachine.{BinaryOperator, Operator, UnaryOperator}
 import org.apache.spark.sql.DataFrame
 
+import scala.collection.mutable
 import scala.util.Try
 
 class DataValidationOperator extends SparkOperatorFactory {
@@ -23,7 +24,7 @@ class DataValidationOperator extends SparkOperatorFactory {
         summaries.map(summary => {
           val value = Try(describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)
             .getOrElse(null.asInstanceOf[Double])
-          Seq((timestamp, config.date, config.dataset, s"desc_$colName", summary, value
+          Seq((timestamp, config.date.get, config.dataset.get, s"desc_$colName", summary, value
           )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
@@ -78,12 +79,34 @@ class DataValidationOperator extends SparkOperatorFactory {
     }
   }
 
+  class Percentile(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+
+    val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
+    val timestamp: Long = System.currentTimeMillis / 1000
+
+    override val execute : ExecuteType = operands => {
+      val sqlContext = SparkCommon.getSparkSession().sqlContext
+      import sqlContext.implicits._
+      val df = operands.head.get
+      val array100 = Array.range(1, 100, 1).map(_ / 100.0)
+      val percentArray = s"array(${array100.mkString(",")})"
+      val result = config.cols.get.map(col => {
+        val percentileValue = df.na.drop.selectExpr(s"percentile($col, $percentArray) as percentile").first().getAs[mutable.WrappedArray[Double]](0)
+        (array100 zip percentileValue).map(x =>
+          Seq((timestamp, config.date.get, config.dataset.get, s"percentile_$col", x._1.toString, x._2)).toDF(columns:_*)
+        ).reduce(_ union _)
+      }).reduce(_ union _)
+      Right(Some(List(result)))
+    }
+  }
+
   override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
     Try(Some(new ShowDataFrame(
       config.name match {
         case "describe" => new DescribeOperator(config)
         case "facet" => new FacetOperator(config)
         case "schema-validation" => new SchemaValidationOperator(config)
+        case "percentile" => new Percentile(config)
       }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }

@@ -49,4 +49,16 @@ class CanonicalStackMachineTest extends FlatSpec {
     assertResult(1)(1)
   }
 
+  it should "a" in {
+    val a = List(1, 2, 3, 4, 5)
+    val b = for {
+      x <- a
+      y = x + 1
+      z = y * 10
+      w = z * 20
+    } yield w
+    println(b)
+    println(a.flatMap(x => List((x + 1) * 10)).flatMap(x => List(x * 20)))
+  }
+
 }

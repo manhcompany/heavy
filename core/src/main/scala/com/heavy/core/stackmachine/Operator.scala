@@ -14,13 +14,13 @@ class Operand[A] extends Operator[A] {
 }
 
 class UnaryOperator[A] extends Operator[A] {
-  override def getNumberOperator: Int = 1
+  final override def getNumberOperator: Int = 1
 
   override val execute: ExecuteType = _ => Right(None)
 }
 
 class BinaryOperator[A] extends Operator[A] {
-  override def getNumberOperator: Int = 2
+  final override def getNumberOperator: Int = 2
 
   override val execute: ExecuteType = _ => Right(None)
 }
