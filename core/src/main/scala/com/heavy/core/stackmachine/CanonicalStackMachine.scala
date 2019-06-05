@@ -12,7 +12,7 @@ object CanonicalStackMachine extends AbstractStackMachine {
   def executeBranch[A](operators: Seq[Operator[A]], stack: mutable.Stack[Option[A]], branches: Map[String, Seq[Operator[A]]]): mutable.Stack[Option[A]] = {
     operators.foldLeft(stack)((s, op) => {
       val operands = (1 to op.getNumberOperator).toList.map(_ => s.pop())
-      op.execute(operands: _*) match {
+      op.execute(operands) match {
         case Right(odfs) => odfs match {
           case Some(dfs) => if(dfs.nonEmpty) dfs.foldLeft(s)((a, e) => a.push(Some(e)))
             else s.push(None)

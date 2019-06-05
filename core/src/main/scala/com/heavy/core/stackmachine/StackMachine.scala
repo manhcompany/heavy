@@ -7,7 +7,7 @@ object StackMachine extends AbstractStackMachine {
     val stack = mutable.Stack[Option[A]]()
     operators.foldLeft(stack)((s, o) => {
       val operands = (1 to o.getNumberOperator).toList.map(_ => s.pop())
-      o.execute(operands: _*) match {
+      o.execute(operands) match {
         case Right(odfs) => odfs match {
           case Some(r) => r.foldLeft(s)((a, e) => a.push(Some(e)))
           case None => s

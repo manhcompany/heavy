@@ -3,6 +3,7 @@ package com.heavy.etl.utils
 import com.heavy.core.stackmachine.{BinaryOperator, Operator, UnaryOperator}
 import org.apache.spark.sql.DataFrame
 
+import scala.collection.mutable
 import scala.util.Try
 
 class DataValidationOperator extends SparkOperatorFactory {
@@ -10,7 +11,7 @@ class DataValidationOperator extends SparkOperatorFactory {
   class DescribeOperator(config: OperatorConfig) extends UnaryOperator[DataFrame] {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
       val cols = config.describeCols.map(x => x.map(x => x.col)).get
@@ -23,7 +24,7 @@ class DataValidationOperator extends SparkOperatorFactory {
         summaries.map(summary => {
           val value = Try(describeResult.select(colName).filter(s"summary = '$summary'").first().get(0).asInstanceOf[String].toDouble)
             .getOrElse(null.asInstanceOf[Double])
-          Seq((timestamp, config.date, config.dataset, s"desc_$colName", summary, value
+          Seq((timestamp, config.date.get, config.dataset.get, s"desc_$colName", summary, value
           )).toDF(columns: _*)}).reduce(_ union _)
       })).map(x => x.reduce(_ union _))
       describeResult.unpersist()
@@ -35,7 +36,7 @@ class DataValidationOperator extends SparkOperatorFactory {
     val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
     val timestamp: Long = System.currentTimeMillis / 1000
 
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val result = config.cols.map(col => col.map(c => {
         operands.head.get.groupBy(c).count.selectExpr(
           s"'$timestamp' as time_stamp",
@@ -62,7 +63,7 @@ class DataValidationOperator extends SparkOperatorFactory {
       * @return Right(Some(List())) if newDf and originalDf schema are the same
       *         Right(Some(List(df))) if newDf and originalDf schema are the difference
       */
-    override def execute(operands: Option[DataFrame]*): Either[Option[String], Option[List[DataFrame]]] = {
+    override val execute : ExecuteType = operands => {
       val sqlContext = SparkCommon.getSparkSession().sqlContext
       import sqlContext.implicits._
 
@@ -78,12 +79,35 @@ class DataValidationOperator extends SparkOperatorFactory {
     }
   }
 
+  class Percentile(config: OperatorConfig) extends UnaryOperator[DataFrame] {
+
+    val columns: Seq[String] = Seq("time_stamp", "date_time", "dataset", "column_name", "key", "value")
+    val timestamp: Long = System.currentTimeMillis / 1000
+
+    override val execute : ExecuteType = operands => {
+      val sqlContext = SparkCommon.getSparkSession().sqlContext
+      import sqlContext.implicits._
+      val df = operands.head.get
+      val array100 = Array.range(1, 100, 1).map(_ / 100.0)
+      val percentArray = s"array(${array100.mkString(",")})"
+      val result = config.cols.get.flatMap(col => {
+        val percentileValue = df.na.drop.selectExpr(s"percentile($col, $percentArray) as percentile").first().getAs[mutable.WrappedArray[Double]](0)
+        (array100 zip percentileValue).map(x =>
+          Seq((timestamp, config.date.get, config.dataset.get, s"percentile_$col", x._1.toString, x._2)).toDF(columns: _*)
+        )
+      }).reduce(_ union _)
+
+      Right(Some(List(result)))
+    }
+  }
+
   override def factory(config: OperatorConfig): Option[Operator[DataFrame]] = {
     Try(Some(new ShowDataFrame(
       config.name match {
         case "describe" => new DescribeOperator(config)
         case "facet" => new FacetOperator(config)
         case "schema-validation" => new SchemaValidationOperator(config)
+        case "percentile" => new Percentile(config)
       }))
     ).map(d => d).recover { case _: Throwable => None }.get
   }
