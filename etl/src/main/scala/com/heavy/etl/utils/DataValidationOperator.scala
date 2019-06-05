@@ -90,12 +90,13 @@ class DataValidationOperator extends SparkOperatorFactory {
       val df = operands.head.get
       val array100 = Array.range(1, 100, 1).map(_ / 100.0)
       val percentArray = s"array(${array100.mkString(",")})"
-      val result = config.cols.get.map(col => {
+      val result = config.cols.get.flatMap(col => {
         val percentileValue = df.na.drop.selectExpr(s"percentile($col, $percentArray) as percentile").first().getAs[mutable.WrappedArray[Double]](0)
         (array100 zip percentileValue).map(x =>
-          Seq((timestamp, config.date.get, config.dataset.get, s"percentile_$col", x._1.toString, x._2)).toDF(columns:_*)
-        ).reduce(_ union _)
+          Seq((timestamp, config.date.get, config.dataset.get, s"percentile_$col", x._1.toString, x._2)).toDF(columns: _*)
+        )
       }).reduce(_ union _)
+
       Right(Some(List(result)))
     }
   }
